@@ -5,9 +5,9 @@ from collections.abc import Iterator
 from queue import Queue, LifoQueue
 
 # Tipos usados no programa
-Registro = list[str]              # um registro: lista de campos de texto
-Arvore = dict[str, "Arvore"]      # cada no e um dicionario de filhos (recursivo)
-Caminho = tuple[str, ...]         # sequencia de nomes da raiz ate uma folha
+Registro = list[str]
+Arvore = dict[str, "Arvore"]
+Caminho = tuple[str, ...]
 
 ARQUIVO: str = "dados_sistema.txt"
 
