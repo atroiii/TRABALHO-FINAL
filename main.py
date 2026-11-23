@@ -1,24 +1,30 @@
 # Tema 4: Controle de Logistica Portuaria
 # Aluno: Arthur Felipe Dos Santos - 251-001225
 import os
+from collections.abc import Iterator
 from queue import Queue, LifoQueue
 
-ARQUIVO = "dados_sistema.txt"
+# Tipos usados no programa
+Registro = list[str]              # um registro: lista de campos de texto
+Arvore = dict[str, "Arvore"]      # cada no e um dicionario de filhos (recursivo)
+Caminho = tuple[str, ...]         # sequencia de nomes da raiz ate uma folha
 
-frota = []
-fila = Queue()
-pilha = LifoQueue()
-arvore = {}
+ARQUIVO: str = "dados_sistema.txt"
+
+frota: list[Registro] = []
+fila: Queue[Registro] = Queue()
+pilha: LifoQueue[Registro] = LifoQueue()
+arvore: Arvore = {}
 
 
-CAMPOS = {
+CAMPOS: dict[str, list[str]] = {
     "LISTA": ["Placa", "Transportadora", "Tipo de veiculo"],
     "FILA": ["Placa", "Motorista", "Carga"],
     "PILHA": ["Codigo", "Conteudo", "Peso (t)"],
 }
 
 
-def ler(msg):
+def ler(msg: str) -> str:
     while True:
         txt = input(msg).strip()
         if txt and "|" not in txt and ">" not in txt:
@@ -26,15 +32,15 @@ def ler(msg):
         print("Valor invalido (vazio ou com | ou >).")
 
 
-def ler_registro(tipo):
+def ler_registro(tipo: str) -> Registro:
     return [ler(c + ": ") for c in CAMPOS[tipo]]
 
 
-def exibir(registro):
+def exibir(registro: Registro) -> str:
     return " | ".join(registro)
 
 
-def ler_indice(lista):
+def ler_indice(lista: list[Registro]) -> int | None:
     txt = input("Indice: ").strip()
     if txt.isdigit() and int(txt) < len(lista):
         return int(txt)
@@ -43,7 +49,7 @@ def ler_indice(lista):
 
 
 # ---------- LISTA (frota) ----------
-def lista_menu():
+def lista_menu() -> None:
     print("1-Inserir")
     print("2-Listar")
     print("3-Atualizar")
@@ -57,8 +63,8 @@ def lista_menu():
         case "2":
             if not frota:
                 print("Frota vazia.")
-            for i, v in enumerate(frota):
-                print(i, "-", exibir(v))
+            for pos, v in enumerate(frota):
+                print(pos, "-", exibir(v))
 
         case "3" | "4":
             i = ler_indice(frota)
@@ -74,7 +80,7 @@ def lista_menu():
             print("Opcao invalida.")
 
 
-def fila_menu():
+def fila_menu() -> None:
     print("1-Chegada")
     print("2-Listar")
     print("3-Atualizar primeiro")
@@ -102,7 +108,7 @@ def fila_menu():
             print("Opcao invalida.")
 
 
-def pilha_menu():
+def pilha_menu() -> None:
     print("1-Empilhar")
     print("2-Listar")
     print("3-Atualizar topo")
@@ -129,19 +135,20 @@ def pilha_menu():
         case _:
             print("Opcao invalida.")
 
-def inserir_caminho(caminho):
-    no = arvore
+
+def inserir_caminho(caminho: list[str]) -> None:
+    no: Arvore = arvore
     for nome in caminho:          # desce criando os niveis que faltam
         no = no.setdefault(nome, {})
 
 
-def mostrar(no, nivel=0):
+def mostrar(no: Arvore, nivel: int = 0) -> None:
     for nome, filhos in no.items():
         print("  " * nivel + "- " + nome)
         mostrar(filhos, nivel + 1)
 
 
-def caminhos(no, prefixo=()):
+def caminhos(no: Arvore, prefixo: Caminho = ()) -> Iterator[Caminho]:
     for nome, filhos in no.items():
         if filhos:
             yield from caminhos(filhos, prefixo + (nome,))
@@ -149,7 +156,7 @@ def caminhos(no, prefixo=()):
             yield prefixo + (nome,)
 
 
-def ler_caminho():
+def ler_caminho() -> list[str] | None:
     partes = [p.strip() for p in input("Caminho (ex: Santos>Rotterdam>Hamburgo): ").split(">")]
     if all(partes) and not any("|" in p for p in partes):
         return partes
@@ -157,16 +164,17 @@ def ler_caminho():
     return None
 
 
-def buscar_pai(caminho):
-    pai = arvore
+def buscar_pai(caminho: list[str]) -> Arvore | None:
+    pai: Arvore = arvore
     for nome in caminho[:-1]:
-        pai = pai.get(nome)
-        if pai is None:
+        proximo = pai.get(nome)
+        if proximo is None:
             return None
+        pai = proximo
     return pai
 
 
-def arvore_menu():
+def arvore_menu() -> None:
     print("1-Inserir")
     print("2-Mostrar")
     print("3-Renomear")
@@ -208,7 +216,7 @@ def arvore_menu():
             print("Opcao invalida.")
 
 
-def salvar():
+def salvar() -> None:
     with open(ARQUIVO, "w", encoding="utf-8") as f:
         for v in frota:
             f.write("LISTA|" + "|".join(v) + "\n")
@@ -221,7 +229,7 @@ def salvar():
     print("Dados salvos.")
 
 
-def carregar():
+def carregar() -> None:
     if not os.path.exists(ARQUIVO):
         print("Arquivo nao encontrado.")
         return
@@ -249,9 +257,8 @@ def carregar():
                     inserir_caminho(dados)
     print("Dados carregados.")
 
-def main():
-    acoes = {"1": lista_menu, "2": fila_menu, "3": pilha_menu,
-             "4": arvore_menu, "5": salvar, "6": carregar}
+
+def main() -> None:
     while True:
         print()
         print("1-Frota (Lista)")
@@ -262,12 +269,24 @@ def main():
         print("6-Carregar")
         print("0-Sair")
         op = input("-> ").strip()
-        if op == "0":
-            break
-        if op in acoes:
-            acoes[op]()
-        else:
-            print("Opcao invalida.")
+
+        match op:
+            case "1":
+                lista_menu()
+            case "2":
+                fila_menu()
+            case "3":
+                pilha_menu()
+            case "4":
+                arvore_menu()
+            case "5":
+                salvar()
+            case "6":
+                carregar()
+            case "0":
+                break
+            case _:
+                print("Opcao invalida.")
 
 
 if __name__ == "__main__":
