@@ -33,7 +33,10 @@ def ler(msg: str) -> str:
 
 
 def ler_registro(tipo: str) -> Registro:
-    return [ler(c + ": ") for c in CAMPOS[tipo]]
+    registro = []
+    for c in CAMPOS[tipo]:
+        registro.append(ler(c + ": "))
+    return registro
 
 
 def exibir(registro: Registro) -> str:
@@ -48,7 +51,6 @@ def ler_indice(lista: list[Registro]) -> int | None:
     return None
 
 
-# ---------- LISTA (frota) ----------
 def lista_menu() -> None:
     print("1-Inserir")
     print("2-Listar")
